@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7f2">
+    <title>Badminton Booker</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <div class="brand-mark" aria-hidden="true">B</div>
+        <div>
+          <p class="eyebrow">HILLS ROAD STC · CAMBRIDGE</p>
+          <h1>Your badminton, <span>on the calendar.</span></h1>
+          <p class="intro">Keep an eye on Wednesday and Thursday 6pm courts, and get an email when a slot is ready to book.</p>
+        </div>
+      </header>
+
+      <section class="alert-card" aria-labelledby="alert-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">EMAIL ALERTS</p>
+            <h2 id="alert-title">Tell me when a court opens</h2>
+          </div>
+          <span class="status-dot" aria-hidden="true"></span>
+        </div>
+        <form id="email-form" class="email-form">
+          <label class="visually-hidden" for="email">Your email address</label>
+          <input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+          <button type="submit" id="save-email">Save email</button>
+        </form>
+        <p id="email-message" class="helper" aria-live="polite">Alerts are sent while this page is open and checking.</p>
+        <div id="setup-warning" class="setup-warning" hidden>
+          Email delivery still needs a Resend API key and verified sender in the server environment.
+        </div>
+      </section>
+
+      <section class="availability-section" aria-labelledby="availability-title">
+        <div class="section-heading availability-heading">
+          <div>
+            <p class="eyebrow">UPCOMING COURTS</p>
+            <h2 id="availability-title">Wednesday &amp; Thursday · 6:00pm</h2>
+          </div>
+          <button class="secondary-button" id="check-now" type="button">Check now</button>
+        </div>
+        <p id="last-checked" class="helper">Checking the Hills Road timetable…</p>
+        <div id="slots" class="slot-list" aria-live="polite"></div>
+        <p class="fine-print">You can book up to 7 days ahead. This page checks every 30 minutes while it is open. Booking is completed on the Hills Road site.</p>
+      </section>
+
+      <footer>
+        <span>Made for your next game.</span>
+        <span id="connection-state">Connecting…</span>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "badminton-booker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Availability monitor for Hills Road badminton bookings",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0"
+  }
+}
