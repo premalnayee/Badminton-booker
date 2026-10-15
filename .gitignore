@@ -1,3 +1,4 @@
 node_modules/
 .env
+.booking-helper-profile/
 npm-debug.log*

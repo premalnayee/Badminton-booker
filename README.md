@@ -13,6 +13,22 @@ Render's free web service has no scheduled worker or persistent storage. This ve
 
 The app never books automatically; the email and dashboard link take you to the Hills Road site to complete the booking. Availability can change before you finish booking.
 
+## Fast booking assistant
+
+The local booking assistant uses a separate Playwright browser profile and the Hills Road site’s own signed-in session. It watches the upcoming Wednesday and Thursday 6pm badminton slots and, when one becomes bookable, adds up to `MAX_AUTO_BOOKINGS` entries for that date/time to the basket. It then opens the basket and waits while you check out manually. It never confirms or pays for a booking.
+
+Set `MAX_AUTO_BOOKINGS` in `.env` to `1` or `2` (default `2`). Install the browser once and start the assistant:
+
+```powershell
+npm install
+npx playwright install chromium
+npm run booking:assist
+```
+
+Sign in to Hills Road in the browser window that opens, return to the terminal, and confirm that monitoring should start. The assistant checks every 10 seconds while it is running. You can optionally focus on one date with `npm run booking:assist -- --date 2026-10-22`; the date must be a future Wednesday or Thursday. Stop monitoring with Ctrl+C.
+
+The browser profile, including the venue’s session cookie, is stored locally in `.booking-helper-profile/` and ignored by Git. No venue username or password is stored by the assistant. Keep the browser open while you complete checkout. If the assistant reports an uncertain add-to-basket result, check the basket before restarting it to avoid adding a duplicate. Only if no court was added, set that date/time's `pending` value to `false` in `.booking-helper-profile/booking-state.json` before restarting.
+
 ## Local development
 
 Requires Node.js 20 or newer.
