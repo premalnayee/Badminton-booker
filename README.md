@@ -15,7 +15,7 @@ The app never books automatically; the email and dashboard link take you to the 
 
 ## Fast booking assistant
 
-The local booking assistant uses a separate Playwright browser profile and the Hills Road site’s own signed-in session. It watches the upcoming Wednesday and Thursday 6pm badminton slots and, when one becomes bookable, adds up to `MAX_AUTO_BOOKINGS` entries for that date/time to the basket. It then opens the basket and waits while you check out manually. It never confirms or pays for a booking.
+The local booking assistant uses a separate Playwright browser profile and the Hills Road site’s own signed-in session. By default, it watches the upcoming Wednesday and Thursday 6pm badminton slots. You can override the target date and time with `--date` and `--time`, including dates on other weekdays. When a matching slot becomes available, it adds up to `MAX_AUTO_BOOKINGS` entries for that date/time to the basket. It then opens the basket and waits while you check out manually. It never confirms or pays for a booking.
 
 Set `MAX_AUTO_BOOKINGS` in `.env` to `1` or `2` (default `2`). Install the browser once and start the assistant:
 
@@ -25,7 +25,7 @@ npx playwright install chromium
 npm run booking:assist
 ```
 
-To sign in automatically, set `HILLS_ROAD_EMAIL` and `HILLS_ROAD_PASSWORD` in your local `.env` file. The assistant uses them only to fill the Hills Road login form; they are not written to the browser profile or booking state. Leave both unset to sign in manually in the browser. If the portal requires an additional sign-in step, complete it in the browser when prompted. After signing in, confirm in the terminal that monitoring should start. The assistant checks every 10 seconds while it is running. You can optionally focus on one date with `npm run booking:assist -- --date 2026-10-22`; the date must be a future Wednesday or Thursday. Stop monitoring with Ctrl+C.
+To sign in automatically, set `HILLS_ROAD_EMAIL` and `HILLS_ROAD_PASSWORD` in your local `.env` file. The assistant uses them only to fill the Hills Road login form; they are not written to the browser profile or booking state. Leave both unset to sign in manually in the browser. If the portal requires an additional sign-in step, complete it in the browser when prompted. After signing in, confirm in the terminal that monitoring should start. The assistant checks every second while it is running. For the example Saturday slot, run `npm run booking:assist -- --date 2026-10-24 --time 15:00`. Use another future date and 24-hour `HH:MM` time to test a different slot. Starting the assistant before the venue releases slots lets it keep checking across the release time; the computer and browser must remain running and connected. Stop monitoring with Ctrl+C.
 
 The browser profile, including the venue’s session cookie, is stored locally in `.booking-helper-profile/` and ignored by Git. No venue username or password is stored by the assistant. Keep the browser open while you complete checkout. If the assistant reports an uncertain add-to-basket result, check the basket before restarting it to avoid adding a duplicate. Only if no court was added, set that date/time's `pending` value to `false` in `.booking-helper-profile/booking-state.json` before restarting.
 

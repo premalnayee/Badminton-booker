@@ -11,7 +11,7 @@ const {
 } = require("./booking-assistant");
 const {
   getPortalCredentials,
-  parseRequestedDate,
+  parseRequestedOptions,
 } = require("../scripts/booking-assistant");
 
 test("MAX_AUTO_BOOKINGS defaults to two and only accepts one or two", () => {
@@ -22,11 +22,24 @@ test("MAX_AUTO_BOOKINGS defaults to two and only accepts one or two", () => {
   assert.throws(() => parseMaxAutoBookings("3"), /must be set to 1 or 2/);
 });
 
-test("optional date argument accepts both supported CLI formats", () => {
-  assert.equal(parseRequestedDate([]), undefined);
-  assert.equal(parseRequestedDate(["--date", "2026-10-22"]), "2026-10-22");
-  assert.equal(parseRequestedDate(["--date=2026-10-22"]), "2026-10-22");
-  assert.throws(() => parseRequestedDate(["--unknown"]), /Usage:/);
+test("date and time arguments accept separated and equals formats", () => {
+  assert.deepEqual(parseRequestedOptions([]), {
+    requestedDate: undefined,
+    requestedTime: "18:00",
+  });
+  assert.deepEqual(
+    parseRequestedOptions(["--date", "2026-10-24", "--time", "15:00"]),
+    { requestedDate: "2026-10-24", requestedTime: "15:00" },
+  );
+  assert.deepEqual(
+    parseRequestedOptions(["--date=2026-10-24", "--time=15:00"]),
+    { requestedDate: "2026-10-24", requestedTime: "15:00" },
+  );
+  assert.throws(() => parseRequestedOptions(["--unknown"]), /Usage:/);
+  assert.throws(
+    () => parseRequestedOptions(["--date", "2026-10-24", "--date", "2026-10-25"]),
+    /Usage:/,
+  );
 });
 
 test("Hills Road login credentials are optional but must be configured together", () => {
@@ -48,14 +61,18 @@ test("Hills Road login credentials are optional but must be configured together"
   );
 });
 
-test("requested dates must be Wednesday or Thursday", () => {
+test("requested dates support any future date and a configurable time", () => {
   assert.deepEqual(getRequestedTargets("2026-10-15", "2026-10-22"), [
     { date: "2026-10-22", time: "18:00" },
   ]);
-  assert.throws(
-    () => getRequestedTargets("2026-10-15", "2026-10-23"),
-    /Wednesday or Thursday/,
-  );
+  assert.deepEqual(getRequestedTargets("2026-10-20", "2026-10-24", "15:00"), [
+    { date: "2026-10-24", time: "15:00" },
+  ]);
+  assert.deepEqual(getRequestedTargets("2026-10-15", undefined, "19:30"), [
+    { date: "2026-10-15", time: "19:30" },
+    { date: "2026-10-21", time: "19:30" },
+    { date: "2026-10-22", time: "19:30" },
+  ]);
   assert.throws(
     () => getRequestedTargets("2026-10-15", "2026-02-30"),
     /valid date/,
@@ -63,6 +80,10 @@ test("requested dates must be Wednesday or Thursday", () => {
   assert.throws(
     () => getRequestedTargets("2026-10-15", "2026-10-14"),
     /today or a future date/,
+  );
+  assert.throws(
+    () => getRequestedTargets("2026-10-15", "2026-10-24", "24:00"),
+    /24-hour HH:MM/,
   );
 });
 

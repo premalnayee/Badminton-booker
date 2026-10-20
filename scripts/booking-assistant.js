@@ -22,20 +22,33 @@ const {
 const SITE_ORIGIN = "https://hillsroad.legendonlineservices.co.uk";
 const BOOKING_CENTRE_URL = `${SITE_ORIGIN}/enterprise/bookingscentre/index`;
 const BASKET_URL = `${SITE_ORIGIN}/enterprise/universalbasket/summary`;
-const POLL_INTERVAL_MS = 10_000;
+const POLL_INTERVAL_MS = 1_000;
 const PROFILE_DIRECTORY = path.resolve(".booking-helper-profile");
 const STATE_FILE = path.join(PROFILE_DIRECTORY, "booking-state.json");
 const TIME_ZONE = "Europe/London";
 
-function parseRequestedDate(args) {
-  if (!args.length) return undefined;
-  if (args.length === 1 && args[0].startsWith("--date=")) {
-    return args[0].slice("--date=".length);
+function parseRequestedOptions(args) {
+  const options = {};
+  for (let index = 0; index < args.length; index += 1) {
+    const separator = args[index].indexOf("=");
+    const option = separator < 0 ? args[index] : args[index].slice(0, separator);
+    let value = separator < 0 ? args[index + 1] : args[index].slice(separator + 1);
+    if (separator < 0) index += 1;
+
+    if (!["--date", "--time"].includes(option)
+      || !value
+      || value.startsWith("--")
+      || options[option]) {
+      throw new Error(
+        "Usage: npm run booking:assist -- [--date YYYY-MM-DD] [--time HH:MM].",
+      );
+    }
+    options[option] = value;
   }
-  if (args.length === 2 && args[0] === "--date") {
-    return args[1];
-  }
-  throw new Error("Usage: npm run booking:assist -- [--date YYYY-MM-DD].");
+  return {
+    requestedDate: options["--date"],
+    requestedTime: options["--time"] || "18:00",
+  };
 }
 
 function getPortalCredentials(environment = process.env) {
@@ -58,7 +71,8 @@ function formatTarget(target) {
     month: "long",
     year: "numeric",
     timeZone: TIME_ZONE,
-  }).format(getUtcFromUkLocal(target.date, target.time));
+  }).format(getUtcFromUkLocal(target.date, target.time))
+    + ` at ${target.time}`;
 }
 
 async function signInToPortal(page, terminal, credentials) {
@@ -341,9 +355,13 @@ async function monitorAndAdd(page, requestedTargets, maxBookings, state) {
 
 async function main() {
   const maxBookings = parseMaxAutoBookings();
-  const requestedDate = parseRequestedDate(process.argv.slice(2));
+  const { requestedDate, requestedTime } = parseRequestedOptions(process.argv.slice(2));
   const portalCredentials = getPortalCredentials();
-  const requestedTargets = getRequestedTargets(getUkDate(), requestedDate);
+  const requestedTargets = getRequestedTargets(
+    getUkDate(),
+    requestedDate,
+    requestedTime,
+  );
   if (!requestedTargets.length) {
     throw new Error("No upcoming Wednesday or Thursday target dates were found.");
   }
@@ -369,8 +387,11 @@ async function main() {
   try {
     await signInToPortal(page, terminal, portalCredentials);
 
-    console.log(`Monitoring Wednesday/Thursday 6pm badminton. Limit: ${maxBookings} per date/time.`);
-    console.log("Checks run every 10 seconds. No checkout or payment will be performed.");
+    const targetDescription = requestedDate
+      ? formatTarget(requestedTargets[0])
+      : `Wednesday/Thursday at ${requestedTime}`;
+    console.log(`Monitoring badminton for ${targetDescription}. Limit: ${maxBookings} per date/time.`);
+    console.log("Checks run every second. No checkout or payment will be performed.");
     const confirmation = await terminal.question('Type START to begin monitoring: ');
     if (confirmation.trim() !== "START") {
       console.log("Monitoring cancelled.");
@@ -408,5 +429,5 @@ if (require.main === module) {
 module.exports = {
   getPortalCredentials,
   getResourceChoices,
-  parseRequestedDate,
+  parseRequestedOptions,
 };

@@ -15,9 +15,16 @@ function parseMaxAutoBookings(value = process.env.MAX_AUTO_BOOKINGS) {
   return Number(configuredValue);
 }
 
-function getRequestedTargets(startDate, requestedDate) {
+function getRequestedTargets(startDate, requestedDate, requestedTime = "18:00") {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(requestedTime)) {
+    throw new Error("The requested time must be in 24-hour HH:MM format.");
+  }
+
   if (!requestedDate) {
-    return getTargets(startDate, 8);
+    return getTargets(startDate, 8).map((target) => ({
+      ...target,
+      time: requestedTime,
+    }));
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
@@ -25,14 +32,10 @@ function getRequestedTargets(startDate, requestedDate) {
     throw new Error("The requested date must be a valid date in YYYY-MM-DD format.");
   }
 
-  const targets = getTargets(requestedDate, 1);
-  if (!targets.length) {
-    throw new Error("The requested date must be a Wednesday or Thursday.");
-  }
   if (requestedDate < startDate) {
     throw new Error("The requested date must be today or a future date.");
   }
-  return targets;
+  return [{ date: requestedDate, time: requestedTime }];
 }
 
 function getAvailableRows(rows, target) {
