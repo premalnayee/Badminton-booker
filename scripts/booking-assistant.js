@@ -392,11 +392,6 @@ async function main() {
       : `Wednesday/Thursday at ${requestedTime}`;
     console.log(`Monitoring badminton for ${targetDescription}. Limit: ${maxBookings} per date/time.`);
     console.log("Checks run every second. No checkout or payment will be performed.");
-    const confirmation = await terminal.question('Type START to begin monitoring: ');
-    if (confirmation.trim() !== "START") {
-      console.log("Monitoring cancelled.");
-      return;
-    }
 
     while (true) {
       const result = await monitorAndAdd(page, requestedTargets, maxBookings, state);
