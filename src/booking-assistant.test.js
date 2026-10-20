@@ -9,7 +9,10 @@ const {
   parseMaxAutoBookings,
   serializeBookingRequest,
 } = require("./booking-assistant");
-const { parseRequestedDate } = require("../scripts/booking-assistant");
+const {
+  getPortalCredentials,
+  parseRequestedDate,
+} = require("../scripts/booking-assistant");
 
 test("MAX_AUTO_BOOKINGS defaults to two and only accepts one or two", () => {
   assert.equal(parseMaxAutoBookings(undefined), 2);
@@ -24,6 +27,25 @@ test("optional date argument accepts both supported CLI formats", () => {
   assert.equal(parseRequestedDate(["--date", "2026-10-22"]), "2026-10-22");
   assert.equal(parseRequestedDate(["--date=2026-10-22"]), "2026-10-22");
   assert.throws(() => parseRequestedDate(["--unknown"]), /Usage:/);
+});
+
+test("Hills Road login credentials are optional but must be configured together", () => {
+  assert.equal(getPortalCredentials({}), null);
+  assert.deepEqual(
+    getPortalCredentials({
+      HILLS_ROAD_EMAIL: "player@example.com",
+      HILLS_ROAD_PASSWORD: "example-password",
+    }),
+    { email: "player@example.com", password: "example-password" },
+  );
+  assert.throws(
+    () => getPortalCredentials({ HILLS_ROAD_EMAIL: "player@example.com" }),
+    /Set both HILLS_ROAD_EMAIL and HILLS_ROAD_PASSWORD/,
+  );
+  assert.throws(
+    () => getPortalCredentials({ HILLS_ROAD_PASSWORD: "example-password" }),
+    /Set both HILLS_ROAD_EMAIL and HILLS_ROAD_PASSWORD/,
+  );
 });
 
 test("requested dates must be Wednesday or Thursday", () => {

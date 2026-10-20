@@ -20,7 +20,6 @@ const {
 } = require("../src/booking-assistant");
 
 const SITE_ORIGIN = "https://hillsroad.legendonlineservices.co.uk";
-const LOGIN_URL = `${SITE_ORIGIN}/enterprise/account/login`;
 const BOOKING_CENTRE_URL = `${SITE_ORIGIN}/enterprise/bookingscentre/index`;
 const BASKET_URL = `${SITE_ORIGIN}/enterprise/universalbasket/summary`;
 const POLL_INTERVAL_MS = 10_000;
@@ -39,6 +38,19 @@ function parseRequestedDate(args) {
   throw new Error("Usage: npm run booking:assist -- [--date YYYY-MM-DD].");
 }
 
+function getPortalCredentials(environment = process.env) {
+  const email = environment.HILLS_ROAD_EMAIL;
+  const password = environment.HILLS_ROAD_PASSWORD;
+  if (!email && !password) return null;
+  if (typeof email !== "string" || !email.trim()
+    || typeof password !== "string" || !password) {
+    throw new Error(
+      "Set both HILLS_ROAD_EMAIL and HILLS_ROAD_PASSWORD to enable automatic sign-in.",
+    );
+  }
+  return { email, password };
+}
+
 function formatTarget(target) {
   return new Intl.DateTimeFormat("en-GB", {
     weekday: "long",
@@ -47,6 +59,50 @@ function formatTarget(target) {
     year: "numeric",
     timeZone: TIME_ZONE,
   }).format(getUtcFromUkLocal(target.date, target.time));
+}
+
+async function signInToPortal(page, terminal, credentials) {
+  await page.goto(BOOKING_CENTRE_URL, { waitUntil: "domcontentloaded" });
+  if (!new URL(page.url()).pathname.endsWith("/account/login")) return;
+
+  if (!credentials) {
+    await terminal.question(
+      "Sign in to Hills Road in the browser window. Press Enter here when signed in: ",
+    );
+  } else {
+    await page.locator('[data-test-id="login-email"]').fill(credentials.email);
+    await page.locator('[data-test-id="login-password"]').fill(credentials.password);
+    await page.locator('[data-test-id="login-submit"]').click();
+
+    try {
+      await page.waitForFunction(
+        () => !location.pathname.endsWith("/account/login"),
+        null,
+        { timeout: 15_000 },
+      );
+    } catch (error) {
+      if (error.name !== "TimeoutError") throw error;
+
+      const loginError = (
+        await page.locator('[data-test-id="login-error-alert"]').textContent()
+      )?.trim();
+      if (loginError) {
+        throw new Error(`Hills Road rejected the login: ${loginError}`);
+      }
+
+      await terminal.question(
+        "Automatic sign-in did not finish. Complete any additional sign-in steps "
+        + "in the browser, then press Enter here: ",
+      );
+    }
+  }
+
+  await page.goto(BOOKING_CENTRE_URL, { waitUntil: "domcontentloaded" });
+  if (new URL(page.url()).pathname.endsWith("/account/login")) {
+    throw new Error(
+      "Hills Road is still showing its login page. Check your credentials and try again.",
+    );
+  }
 }
 
 async function readState() {
@@ -286,6 +342,7 @@ async function monitorAndAdd(page, requestedTargets, maxBookings, state) {
 async function main() {
   const maxBookings = parseMaxAutoBookings();
   const requestedDate = parseRequestedDate(process.argv.slice(2));
+  const portalCredentials = getPortalCredentials();
   const requestedTargets = getRequestedTargets(getUkDate(), requestedDate);
   if (!requestedTargets.length) {
     throw new Error("No upcoming Wednesday or Thursday target dates were found.");
@@ -310,14 +367,7 @@ async function main() {
   const terminal = readline.createInterface({ input: stdin, output: stdout });
 
   try {
-    await page.goto(LOGIN_URL, { waitUntil: "domcontentloaded" });
-    await terminal.question(
-      "Sign in to Hills Road in the browser window. Press Enter here when signed in: ",
-    );
-    await page.goto(BOOKING_CENTRE_URL, { waitUntil: "domcontentloaded" });
-    if (new URL(page.url()).pathname.endsWith("/account/login")) {
-      throw new Error("The portal is still showing its login page. Sign in and run the assistant again.");
-    }
+    await signInToPortal(page, terminal, portalCredentials);
 
     console.log(`Monitoring Wednesday/Thursday 6pm badminton. Limit: ${maxBookings} per date/time.`);
     console.log("Checks run every 10 seconds. No checkout or payment will be performed.");
@@ -356,6 +406,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  getPortalCredentials,
   getResourceChoices,
   parseRequestedDate,
 };

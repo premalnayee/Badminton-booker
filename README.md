@@ -25,7 +25,7 @@ npx playwright install chromium
 npm run booking:assist
 ```
 
-Sign in to Hills Road in the browser window that opens, return to the terminal, and confirm that monitoring should start. The assistant checks every 10 seconds while it is running. You can optionally focus on one date with `npm run booking:assist -- --date 2026-10-22`; the date must be a future Wednesday or Thursday. Stop monitoring with Ctrl+C.
+To sign in automatically, set `HILLS_ROAD_EMAIL` and `HILLS_ROAD_PASSWORD` in your local `.env` file. The assistant uses them only to fill the Hills Road login form; they are not written to the browser profile or booking state. Leave both unset to sign in manually in the browser. If the portal requires an additional sign-in step, complete it in the browser when prompted. After signing in, confirm in the terminal that monitoring should start. The assistant checks every 10 seconds while it is running. You can optionally focus on one date with `npm run booking:assist -- --date 2026-10-22`; the date must be a future Wednesday or Thursday. Stop monitoring with Ctrl+C.
 
 The browser profile, including the venue’s session cookie, is stored locally in `.booking-helper-profile/` and ignored by Git. No venue username or password is stored by the assistant. Keep the browser open while you complete checkout. If the assistant reports an uncertain add-to-basket result, check the basket before restarting it to avoid adding a duplicate. Only if no court was added, set that date/time's `pending` value to `false` in `.booking-helper-profile/booking-state.json` before restarting.
 
