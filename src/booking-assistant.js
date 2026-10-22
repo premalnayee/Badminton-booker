@@ -2,7 +2,6 @@ const {
   addDays,
   getTargets,
   getUtcFromUkLocal,
-  isBookableWithinWindow,
 } = require("./availability");
 
 const TIME_ZONE = "Europe/London";
@@ -152,7 +151,9 @@ function serializeBookingRequest(request) {
 }
 
 function isTargetBookable(target, now = new Date()) {
-  return isBookableWithinWindow(target.date, target.time, now);
+  const releaseTime = getUtcFromUkLocal(addDays(target.date, -7), "00:00");
+  const bookingTime = getUtcFromUkLocal(target.date, target.time);
+  return now >= releaseTime && now < bookingTime;
 }
 
 module.exports = {

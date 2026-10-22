@@ -15,7 +15,7 @@ The app never books automatically; the email and dashboard link take you to the 
 
 ## Fast booking assistant
 
-The local booking assistant uses a separate Playwright browser profile and the Hills Road site’s own signed-in session. By default, it watches the upcoming Wednesday and Thursday 6pm badminton slots. You can override the target date and time with `--date` and `--time`, including dates on other weekdays. When a matching slot becomes available, it adds up to `MAX_AUTO_BOOKINGS` entries for that date/time to the basket. It then opens the basket and waits while you check out manually. It never confirms or pays for a booking.
+The local booking assistant uses a separate Playwright browser profile and the Hills Road site’s own signed-in session. By default, it watches the upcoming Wednesday and Thursday 6pm badminton slots. You can override the target date and time with `--date` and `--time`, including dates on other weekdays. It waits until 00:00 UK time seven calendar days before each target date to start checking; for a Wednesday booking, that is midnight the previous Wednesday. To reduce lookup time, it fetches timetable data only for each target date, then attempts to add a matching slot to the basket and checks the portal's success response. When a matching slot becomes available, it adds up to `MAX_AUTO_BOOKINGS` entries for that date/time to the basket. It then opens the basket and waits while you check out manually. It never confirms or pays for a booking.
 
 Set `MAX_AUTO_BOOKINGS` in `.env` to `1` or `2` (default `2`). Install the browser once and start the assistant:
 

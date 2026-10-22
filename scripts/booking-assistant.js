@@ -6,7 +6,6 @@ const readline = require("node:readline/promises");
 const { stdin, stdout } = require("node:process");
 const { chromium } = require("playwright");
 const {
-  addDays,
   getUkDate,
   getUtcFromUkLocal,
 } = require("../src/availability");
@@ -251,14 +250,10 @@ async function addToBasket(page, request) {
 }
 
 async function monitorAndAdd(page, requestedTargets, maxBookings, state) {
-  const today = getUkDate();
-  const endDate = addDays(today, 7);
   const activeTargets = requestedTargets.filter((target) => isTargetBookable(target));
   if (!activeTargets.length) {
     return { added: 0, waiting: true };
   }
-
-  const rows = await fetchTimetable(page, today, endDate);
   for (const target of activeTargets) {
     const key = `${target.date}T${target.time}`;
     const targetState = state.targets[key] || { added: 0, pending: false, usedCourts: [] };
@@ -271,6 +266,7 @@ async function monitorAndAdd(page, requestedTargets, maxBookings, state) {
       );
     }
     if (targetState.added >= maxBookings) continue;
+    const rows = await fetchTimetable(page, target.date, target.date);
 
     let addedThisRun = 0;
     while (targetState.added < maxBookings) {

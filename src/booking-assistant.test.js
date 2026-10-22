@@ -6,6 +6,7 @@ const {
   formatBookingDate,
   getAvailableRows,
   getRequestedTargets,
+  isTargetBookable,
   parseMaxAutoBookings,
   serializeBookingRequest,
 } = require("./booking-assistant");
@@ -85,6 +86,18 @@ test("requested dates support any future date and a configurable time", () => {
     () => getRequestedTargets("2026-10-15", "2026-10-24", "24:00"),
     /24-hour HH:MM/,
   );
+});
+
+test("target monitoring starts at midnight UK time seven days before booking", () => {
+  const target = { date: "2026-10-28", time: "18:00" };
+
+  assert.equal(
+    isTargetBookable(target, new Date("2026-10-20T22:59:59.999Z")),
+    false,
+  );
+  assert.equal(isTargetBookable(target, new Date("2026-10-20T23:00:00.000Z")), true);
+  assert.equal(isTargetBookable(target, new Date("2026-10-21T00:00:00.000Z")), true);
+  assert.equal(isTargetBookable(target, new Date("2026-10-28T18:00:00.000Z")), false);
 });
 
 test("availability selection includes only matching available courts", () => {
