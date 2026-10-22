@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 require("dotenv").config();
 const express = require("express");
+const { createLogger } = require("./src/logger");
 
 const {
   addDays,
@@ -12,6 +13,7 @@ const {
 } = require("./src/availability");
 
 const app = express();
+const logger = createLogger();
 const port = Number(process.env.PORT) || 3000;
 const sitePassword = process.env.APP_PASSWORD;
 const sentNotifications = new Map();
@@ -198,10 +200,12 @@ async function sendAvailabilityEmail(email, date, time) {
 }
 
 app.use((error, _req, res, _next) => {
-  console.error(error);
+  logger.error(error);
   res.status(500).json({ error: "The request failed. Please try again shortly." });
 });
 
 app.listen(port, "0.0.0.0", () => {
-  console.log(`Badminton Booker listening on port ${port}`);
+  logger.info(`Badminton Booker listening on port ${port}`);
 });
+
+process.once("exit", () => logger.close());

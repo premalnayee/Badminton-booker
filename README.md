@@ -40,6 +40,8 @@ Copy-Item .env.example .env
 
 Set `APP_PASSWORD` in `.env` before starting the server. Email sending also needs `RESEND_API_KEY` and `FROM_EMAIL`.
 
+Server and booking-assistant logs are written to `logs/app.log` and still appear in the terminal. Set `LOG_FILE` in `.env` to use a different path. Consecutive identical lines are compacted into a summary every 30 seconds or when the message changes. The log file is append-only and is not automatically rotated.
+
 ```powershell
 npm start
 npm test

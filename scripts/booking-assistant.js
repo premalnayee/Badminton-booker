@@ -9,6 +9,7 @@ const {
   getUkDate,
   getUtcFromUkLocal,
 } = require("../src/availability");
+const { createLogger } = require("../src/logger");
 const {
   buildBookingRequest,
   getAvailableRows,
@@ -25,6 +26,7 @@ const POLL_INTERVAL_MS = 1_000;
 const PROFILE_DIRECTORY = path.resolve(".booking-helper-profile");
 const STATE_FILE = path.join(PROFILE_DIRECTORY, "booking-state.json");
 const TIME_ZONE = "Europe/London";
+const logger = createLogger();
 
 function parseRequestedOptions(args) {
   const options = {};
@@ -319,7 +321,7 @@ async function monitorAndAdd(page, requestedTargets, maxBookings, state) {
       state.targets[key] = targetState;
       await writeState(state);
       addedThisRun += 1;
-      console.log(`Added one court for ${formatTarget(target)}. (${targetState.added}/${maxBookings})`);
+      logger.info(`Added one court for ${formatTarget(target)}. (${targetState.added}/${maxBookings})`);
 
       if (targetState.added >= maxBookings) {
         return { added: addedThisRun, target };
@@ -329,7 +331,7 @@ async function monitorAndAdd(page, requestedTargets, maxBookings, state) {
       try {
         refreshedRows = await fetchTimetable(page, target.date, target.date);
       } catch (error) {
-        console.warn(
+        logger.warn(
           `One court was added, but availability could not be checked for a second. ${error.message}`,
         );
         return { added: addedThisRun, target };
@@ -386,14 +388,14 @@ async function main() {
     const targetDescription = requestedDate
       ? formatTarget(requestedTargets[0])
       : `Wednesday/Thursday at ${requestedTime}`;
-    console.log(`Monitoring badminton for ${targetDescription}. Limit: ${maxBookings} per date/time.`);
-    console.log("Checks run every second. No checkout or payment will be performed.");
+    logger.info(`Monitoring badminton for ${targetDescription}. Limit: ${maxBookings} per date/time.`);
+    logger.info("Checks run every second. No checkout or payment will be performed.");
 
     while (true) {
       const result = await monitorAndAdd(page, requestedTargets, maxBookings, state);
       if (result.added > 0) {
         await page.goto(BASKET_URL, { waitUntil: "domcontentloaded" });
-        console.log(
+        logger.info(
           `Basket opened for ${formatTarget(result.target)}. `
           + "Complete checkout manually in the browser.",
         );
@@ -401,7 +403,7 @@ async function main() {
         return;
       }
 
-      console.log(`No matching court yet. Next check in ${POLL_INTERVAL_MS / 1000} seconds.`);
+      logger.info(`No matching court yet. Next check in ${POLL_INTERVAL_MS / 1000} seconds.`);
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
     }
   } finally {
@@ -411,10 +413,11 @@ async function main() {
 }
 
 if (require.main === module) {
+  process.once("exit", () => logger.close());
   main().catch((error) => {
-    console.error(error.message);
+    logger.error(error.message);
     process.exitCode = 1;
-  });
+  }).finally(() => logger.close());
 }
 
 module.exports = {
